@@ -1,13 +1,14 @@
-import 'dart:html';
 import 'dart:math';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+//Lanzar la app, en sí es un widget
 void main() {
   runApp(MyApp());
 }
 
+//Lanza los componentes de la app
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// con esta clase manipulo el comportamiento de la App, en este caso uso palabras compuestas
+//Manipular el comportamiento de  los elementos de la app
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
   var currentNumber = Random().nextInt(10);
@@ -53,44 +54,88 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+//Cambia el estado de el homepage
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+//Elige que página navegar según el estado del indice determinado por el NavigationRail
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
-        children: [
-          SafeArea(
-            child: NavigationRail(
-              extended: false,
-              destinations: [
-                NavigationRailDestination(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.favorite),
-                  label: Text('Favorites'),
-                ),
-              ],
-              selectedIndex: 0,
-              onDestinationSelected: (value) {
-                print('selected: $value');
-              },
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+      //break;
+      case 1:
+        page = FavoritesPage();
+      //break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+              child: NavigationRail(
+                extended: constraints.maxWidth >= 600,
+                destinations: [
+                  NavigationRailDestination(
+                    icon: Icon(Icons.home),
+                    label: Text('Home'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.favorite),
+                    label: Text('Favorites'),
+                  ),
+                ],
+                selectedIndex: selectedIndex,
+                onDestinationSelected: (value) {
+                  setState(() {
+                    selectedIndex = value;
+                  });
+                },
+              ),
             ),
-          ),
-          Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: GeneratorPage(),
+            Expanded(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+//Lanza mis favoritos
+class FavoritesPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    if (appState.favorites.isEmpty) {
+      return Center(child: Text("No tiene favoritos"));
+    }
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text('Tienes ${appState.favorites.length} favorites.'),
+        ),
+        for (var pair in appState.favorites)
+          ListTile(leading: Icon(Icons.favorite), title: Text(pair.asLowerCase))
+      ],
     );
   }
 }
 
-
+//Lanza el widget que se mostrará en el Home page de acuerdo con el indice marcado como GenratorPage
 class GeneratorPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -135,6 +180,7 @@ class GeneratorPage extends StatelessWidget {
   }
 }
 
+//Este widget muestra la palabra compuesta
 class BigCard extends StatelessWidget {
   const BigCard({
     super.key,
